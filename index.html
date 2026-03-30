@@ -14,10 +14,21 @@ header{background:#111;border-bottom:1px solid #222;padding:10px 16px;display:fl
 header h1{font-size:16px;font-weight:700;color:#00E5CC;letter-spacing:2px}
 header span{font-size:11px;color:#555}
 
-.main{display:flex;flex:1;overflow:hidden}
+.main{display:flex;flex:1;overflow:hidden;min-height:0}
 
 /* Sidebar */
-.sidebar{width:280px;background:#111;border-right:1px solid #1e1e1e;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar{width:280px;min-width:280px;background:#111;border-right:1px solid #1e1e1e;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+
+/* Map */
+.map-wrap{flex:1;position:relative;min-width:0;min-height:0}
+#map{position:absolute;top:0;left:0;right:0;bottom:0}
+
+/* Responsive - stack on narrow screens */
+@media (max-width:700px){
+  .main{flex-direction:column}
+  .sidebar{width:100%;min-width:unset;max-height:50vh;border-right:none;border-bottom:1px solid #1e1e1e}
+  .map-wrap{flex:1;min-height:300px}
+}
 .section{padding:12px;border-bottom:1px solid #1a1a1a}
 .section h2{font-size:10px;font-weight:700;letter-spacing:2px;color:#555;margin-bottom:8px}
 
@@ -66,16 +77,11 @@ button.danger:hover{background:#e74c3c}
 .flash-usage{height:8px;background:#1a1a1a;border-radius:4px;overflow:hidden;margin-top:6px}
 .flash-fill{height:100%;background:linear-gradient(90deg,#00E5CC,#00a896);border-radius:4px;transition:width .5s}
 
-/* Map */
-.map-wrap{flex:1;position:relative;min-height:400px}
-#map{width:100%;height:100%;min-height:400px}
-
-.map-overlay{position:absolute;top:10px;right:10px;z-index:1000;display:flex;flex-direction:column;gap:6px}
-.map-badge{background:rgba(0,0,0,.8);border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:11px;color:#aaa;backdrop-filter:blur(4px)}
-.map-badge span{color:#00E5CC;font-weight:700}
-
 /* Selection rectangle */
 .leaflet-container{background:#111}
+.map-overlay{position:absolute;top:10px;right:10px;z-index:1000;display:flex;flex-direction:column;gap:6px}
+.map-badge{background:rgba(0,0,0,.8);border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:11px;color:#aaa}
+.map-badge span{color:#00E5CC;font-weight:700}
 </style>
 </head>
 <body>
