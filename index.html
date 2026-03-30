@@ -98,7 +98,7 @@ input[type=text]:focus, input[type=number]:focus { border-color: #00E5CC; }
 .log .wn { color: #e67e22; }
 .drop { border: 1px dashed #2a2a2a; border-radius: 5px; padding: 10px; text-align: center; cursor: pointer; color: #555; font-size: 11px; }
 .drop:hover, .drop.over { border-color: #00E5CC; color: #00E5CC; }
-#overlay { position: absolute; top: 10px; right: 10px; z-index: 1000; display: flex; flex-direction: column; gap: 5px; pointer-events: none; }
+#overlay { position: absolute; top: 10px; left: 10px; z-index: 1000; display: flex; flex-direction: column; gap: 5px; pointer-events: none; }
 .badge { background: rgba(10,10,10,.85); border: 1px solid #2a2a2a; border-radius: 5px; padding: 5px 9px; font-size: 10px; color: #888; }
 .badge span { color: #00E5CC; font-weight: 700; }
 @media (max-width: 640px) {
@@ -226,6 +226,8 @@ input[type=text]:focus, input[type=number]:focus { border-color: #00E5CC; }
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+const map = L.map('map', {zoomControl: false}).setView([60.25,24.60],10);
+L.control.zoom({position: 'bottomleft'}).addTo(map);
 const osmStd = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',subdomains:'abc',maxZoom:19});
 const cyclOSM = L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',{attribution:'© CyclOSM © OpenStreetMap',subdomains:'abc',maxZoom:20});
 const openTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{attribution:'© OpenTopoMap © OpenStreetMap',subdomains:'abc',maxZoom:17});
@@ -243,7 +245,8 @@ L.control.layers(
   {
     '🚵 MTB routes overlay': mtbOverlay,
     '🔵 Cycling routes overlay': cycRoutes,
-  }
+  },
+  {position: 'bottomright'}
 ).addTo(map);
 window.addEventListener('load',()=>setTimeout(()=>map.invalidateSize(),300));
 
