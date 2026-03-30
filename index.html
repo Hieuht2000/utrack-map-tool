@@ -226,12 +226,25 @@ input[type=text]:focus, input[type=number]:focus { border-color: #00E5CC; }
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const map = L.map('map').setView([60.25,24.60],10);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  attribution:'© OpenStreetMap contributors',subdomains:'abc',maxZoom:19
-}).addTo(map);
-const cyc=L.tileLayer('https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png',{opacity:.7,maxZoom:19});
-L.control.layers({'🗺 Standard':L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{subdomains:'abc',maxZoom:19,attribution:'© OSM'})},{'🚴 Cycling overlay':cyc}).addTo(map);
+const osmStd = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',subdomains:'abc',maxZoom:19});
+const cyclOSM = L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',{attribution:'© CyclOSM © OpenStreetMap',subdomains:'abc',maxZoom:20});
+const openTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{attribution:'© OpenTopoMap © OpenStreetMap',subdomains:'abc',maxZoom:17});
+const mtbOverlay = L.tileLayer('https://tile.waymarkedtrails.org/mtb/{z}/{x}/{y}.png',{attribution:'© Waymarked Trails',maxZoom:19,opacity:.8});
+const cycRoutes = L.tileLayer('https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png',{attribution:'© Waymarked Trails',maxZoom:19,opacity:.8});
+
+osmStd.addTo(map);
+
+L.control.layers(
+  {
+    '🗺 Standard OSM': osmStd,
+    '🚴 CyclOSM (bike+MTB+gravel)': cyclOSM,
+    '🏔 OpenTopoMap (terrain)': openTopo,
+  },
+  {
+    '🚵 MTB routes overlay': mtbOverlay,
+    '🔵 Cycling routes overlay': cycRoutes,
+  }
+).addTo(map);
 window.addEventListener('load',()=>setTimeout(()=>map.invalidateSize(),300));
 
 let mode='radius',cLat=60.25,cLon=24.60;
