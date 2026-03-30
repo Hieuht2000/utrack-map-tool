@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>U-Track Map Tool</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',sans-serif;background:#0a0a0a;color:#e0e0e0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
@@ -84,12 +84,6 @@ button.danger:hover{background:#e74c3c}
   <span>Offline tile builder for NOR Flash</span>
   <span style="margin-left:auto;color:#00E5CC" id="flashBadge">64MB Flash</span>
 </header>
-<div style="background:#1a0f00;border-bottom:1px solid #332200;padding:6px 16px;font-size:11px;color:#e67e22;flex-shrink:0">
-  ⚠️ Run from a local server for full OSM detail:
-  <code style="background:#111;padding:2px 6px;border-radius:3px;color:#fff;margin-left:4px">python -m http.server 8080</code>
-  then open
-  <code style="background:#111;padding:2px 6px;border-radius:3px;color:#fff">http://localhost:8080/utrack_map_tool.html</code>
-</div>
 
 <div class="main">
 <div class="sidebar">
@@ -209,7 +203,7 @@ button.danger:hover{background:#e74c3c}
 </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ─── Custom route drawing ────────────────────────────────────────────────────
 let routeWaypoints = [];      // raw clicked points [{lat,lon}]
