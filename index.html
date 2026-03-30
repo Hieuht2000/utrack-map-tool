@@ -3,1043 +3,416 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>U-Track Map Tool</title>
+<title>OSM Tile Builder</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-html{height:100%}
-body{font-family:'Segoe UI',sans-serif;background:#0a0a0a;color:#e0e0e0;height:100%;display:flex;flex-direction:column;overflow:hidden}
-
-header{background:#111;border-bottom:1px solid #222;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
-header h1{font-size:16px;font-weight:700;color:#00E5CC;letter-spacing:2px}
-header span{font-size:11px;color:#555}
-
-.main{display:flex;flex:1;overflow:hidden;min-height:0}
-
-/* Sidebar */
-.sidebar{width:280px;min-width:280px;background:#111;border-right:1px solid #1e1e1e;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
-
-/* Map */
-.map-wrap{flex:1;position:relative;min-width:0;min-height:0}
-#map{position:absolute;top:0;left:0;right:0;bottom:0}
-
-/* Responsive - stack on narrow screens */
-@media (max-width:700px){
-  .main{flex-direction:column}
-  .sidebar{width:100%;min-width:unset;max-height:50vh;border-right:none;border-bottom:1px solid #1e1e1e}
-  .map-wrap{flex:1;min-height:300px}
+html, body {
+  margin: 0; padding: 0;
+  height: 100%; width: 100%;
+  font-family: 'Segoe UI', sans-serif;
+  background: #0a0a0a;
+  color: #e0e0e0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
-.section{padding:12px;border-bottom:1px solid #1a1a1a}
-.section h2{font-size:10px;font-weight:700;letter-spacing:2px;color:#555;margin-bottom:8px}
-
-.search-row{display:flex;gap:6px}
-input[type=text]{background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:7px 10px;border-radius:6px;font-size:12px;flex:1;outline:none}
-input[type=text]:focus{border-color:#00E5CC}
-input[type=text]::placeholder{color:#444}
-
-button{background:#00E5CC;color:#000;border:none;padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;transition:.15s}
-button:hover{background:#00c4b0}
-button:active{transform:scale(.97)}
-button.sec{background:#1e1e1e;color:#aaa;border:1px solid #2a2a2a}
-button.sec:hover{background:#252525;color:#fff}
-button.danger{background:#c0392b;color:#fff}
-button.danger:hover{background:#e74c3c}
-
-.zoom-row{display:flex;align-items:center;gap:8px;margin-top:8px}
-.zoom-row label{font-size:11px;color:#777;flex:1}
-.zoom-row select{background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:5px 8px;border-radius:6px;font-size:12px;outline:none}
-
-.mode-btns{display:flex;gap:6px}
-.mode-btn{flex:1;padding:7px;border-radius:6px;border:1px solid #2a2a2a;background:#1a1a1a;color:#888;font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:.15s;letter-spacing:.3px}
-.mode-btn.active{background:#00E5CC;color:#000;border-color:#00E5CC}
-
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.stat-box{background:#1a1a1a;border-radius:6px;padding:8px 10px}
-.stat-box .val{font-size:18px;font-weight:700;color:#fff}
-.stat-box .lbl{font-size:9px;color:#555;letter-spacing:1px;margin-top:1px}
-.stat-box.warn .val{color:#e67e22}
-.stat-box.ok .val{color:#00E5CC}
-.stat-box.err .val{color:#c0392b}
-
-.progress-wrap{margin-top:8px}
-.progress-bar{height:4px;background:#1a1a1a;border-radius:2px;overflow:hidden}
-.progress-fill{height:100%;background:#00E5CC;border-radius:2px;transition:width .3s;width:0%}
-.progress-label{font-size:10px;color:#555;margin-top:4px}
-
-.log{background:#0d0d0d;border:1px solid #1a1a1a;border-radius:6px;padding:8px;font-size:10px;font-family:monospace;height:120px;overflow-y:auto;color:#777;margin-top:8px}
-.log .ok{color:#00E5CC}
-.log .err{color:#e74c3c}
-.log .warn{color:#e67e22}
-
-.btn-row{display:flex;gap:6px;margin-top:8px}
-.btn-row button{flex:1;font-size:11px}
-
-.flash-usage{height:8px;background:#1a1a1a;border-radius:4px;overflow:hidden;margin-top:6px}
-.flash-fill{height:100%;background:linear-gradient(90deg,#00E5CC,#00a896);border-radius:4px;transition:width .5s}
-
-/* Selection rectangle */
-.leaflet-container{background:#111}
-.map-overlay{position:absolute;top:10px;right:10px;z-index:1000;display:flex;flex-direction:column;gap:6px}
-.map-badge{background:rgba(0,0,0,.8);border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:11px;color:#aaa}
-.map-badge span{color:#00E5CC;font-weight:700}
+* { box-sizing: border-box; }
+#header {
+  background: #111;
+  border-bottom: 1px solid #222;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  height: 42px;
+}
+#header h1 { font-size: 15px; font-weight: 700; color: #00E5CC; letter-spacing: 2px; margin: 0; }
+#header span { font-size: 11px; color: #555; }
+#main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  height: calc(100% - 42px);
+}
+#sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: #111;
+  border-right: 1px solid #1e1e1e;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+#mapwrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+#map {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+}
+.sec { padding: 10px 12px; border-bottom: 1px solid #1a1a1a; }
+.sec h2 { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #555; margin-bottom: 8px; }
+input[type=text], input[type=number], select {
+  background: #1a1a1a; border: 1px solid #2a2a2a; color: #fff;
+  padding: 6px 8px; border-radius: 5px; font-size: 12px; outline: none;
+}
+input[type=text] { width: 100%; }
+input[type=text]:focus, input[type=number]:focus { border-color: #00E5CC; }
+.btn {
+  background: #00E5CC; color: #000; border: none;
+  padding: 7px 12px; border-radius: 5px; font-size: 11px;
+  font-weight: 700; cursor: pointer;
+}
+.btn:hover { background: #00c4b0; }
+.btn.s { background: #1e1e1e; color: #aaa; border: 1px solid #2a2a2a; }
+.btn.s:hover { background: #252525; color: #fff; }
+.btn.r { background: #c0392b; color: #fff; }
+.btn.r:hover { background: #e74c3c; }
+.brow { display: flex; gap: 6px; margin-top: 8px; }
+.brow .btn { flex: 1; }
+.row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.row label { font-size: 11px; color: #777; flex: 1; }
+.chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+.chip { padding: 4px 8px; border-radius: 12px; border: 1px solid #2a2a2a; background: #1a1a1a; color: #888; font-size: 10px; cursor: pointer; }
+.chip:hover { color: #fff; border-color: #555; }
+.mb { flex: 1; padding: 6px; border-radius: 5px; border: 1px solid #2a2a2a; background: #1a1a1a; color: #888; font-size: 11px; font-weight: 600; cursor: pointer; text-align: center; }
+.mb.on { background: #00E5CC; color: #000; border-color: #00E5CC; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.sb { background: #1a1a1a; border-radius: 5px; padding: 7px 9px; }
+.sb .v { font-size: 17px; font-weight: 700; color: #fff; }
+.sb .l { font-size: 9px; color: #555; letter-spacing: 1px; margin-top: 1px; }
+.sb.ok .v { color: #00E5CC; }
+.sb.w .v { color: #e67e22; }
+.sb.e .v { color: #e74c3c; }
+.bar { height: 4px; background: #1a1a1a; border-radius: 2px; overflow: hidden; margin-top: 6px; }
+.barf { height: 100%; background: #00E5CC; border-radius: 2px; width: 0%; transition: width .4s; }
+.prog { margin-top: 8px; display: none; }
+.pb { height: 4px; background: #1a1a1a; border-radius: 2px; overflow: hidden; }
+.pf { height: 100%; background: #00E5CC; border-radius: 2px; width: 0%; transition: width .3s; }
+.pl { font-size: 10px; color: #555; margin-top: 3px; }
+.log { background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 5px; padding: 7px; font-size: 10px; font-family: monospace; height: 90px; overflow-y: auto; color: #666; margin-top: 8px; }
+.log .ok { color: #00E5CC; }
+.log .er { color: #e74c3c; }
+.log .wn { color: #e67e22; }
+.drop { border: 1px dashed #2a2a2a; border-radius: 5px; padding: 10px; text-align: center; cursor: pointer; color: #555; font-size: 11px; }
+.drop:hover, .drop.over { border-color: #00E5CC; color: #00E5CC; }
+#overlay { position: absolute; top: 10px; right: 10px; z-index: 1000; display: flex; flex-direction: column; gap: 5px; pointer-events: none; }
+.badge { background: rgba(10,10,10,.85); border: 1px solid #2a2a2a; border-radius: 5px; padding: 5px 9px; font-size: 10px; color: #888; }
+.badge span { color: #00E5CC; font-weight: 700; }
+@media (max-width: 640px) {
+  #main { flex-direction: column; }
+  #sidebar { width: 100%; min-width: unset; max-height: 45vh; border-right: none; border-bottom: 1px solid #1e1e1e; }
+  #mapwrap { flex: 1; min-height: 200px; }
+}
 </style>
 </head>
 <body>
 
-<header>
-  <h1>U-TRACK MAP TOOL</h1>
-  <span>Offline tile builder for NOR Flash</span>
-  <span style="margin-left:auto;color:#00E5CC" id="flashBadge">64MB Flash</span>
-</header>
+<div id="header">
+  <h1>OSM TILE BUILDER</h1>
+  <span>Offline map image builder</span>
+  <span style="margin-left:auto;color:#00E5CC">64MB Flash</span>
+</div>
 
-<div class="main">
-<div class="sidebar">
+<div id="main">
+  <div id="sidebar">
 
-  <!-- Search -->
-  <div class="section">
-    <h2>LOCATION</h2>
-    <div class="search-row">
-      <input type="text" id="searchInput" placeholder="City, address, or place..." />
-      <button onclick="searchLocation()">GO</button>
-    </div>
-    <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
-      <button class="sec" style="font-size:10px;padding:5px 8px" onclick="goTo(60.1699,24.9384,'Helsinki')">Helsinki</button>
-      <button class="sec" style="font-size:10px;padding:5px 8px" onclick="goTo(60.3297,24.5051,'Nuuksio')">Nuuksio</button>
-      <button class="sec" style="font-size:10px;padding:5px 8px" onclick="goTo(60.2748,24.4960,'Pirttimäki')">Pirttimäki</button>
-      <button class="sec" style="font-size:10px;padding:5px 8px" onclick="goTo(60.0786,24.3853,'Meiko')">Meiko</button>
-    </div>
-  </div>
-
-  <!-- GPX Import -->
-  <div class="section">
-    <h2>GPX ROUTE</h2>
-    <div id="gpxDrop" style="border:1px dashed #2a2a2a;border-radius:6px;padding:12px;text-align:center;cursor:pointer;color:#555;font-size:11px;transition:.2s" 
-         onclick="document.getElementById('gpxFile').click()"
-         ondragover="event.preventDefault();this.style.borderColor='#00E5CC';this.style.color='#00E5CC'"
-         ondragleave="this.style.borderColor='#2a2a2a';this.style.color='#555'"
-         ondrop="handleGpxDrop(event)">
-      Drop GPX file here<br>or click to browse
-    </div>
-    <input type="file" id="gpxFile" accept=".gpx" style="display:none" onchange="handleGpxFile(this.files[0])"/>
-    <div id="gpxInfo" style="display:none;margin-top:6px;font-size:10px;color:#00E5CC"></div>
-    <div style="margin-top:6px;display:flex;align-items:center;gap:6px">
-      <label style="font-size:11px;color:#777">Buffer (km)</label>
-      <input type="number" id="gpxBuffer" value="1" min="0.5" max="5" step="0.5" 
-             style="width:55px;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:5px 8px;border-radius:6px;font-size:12px;outline:none"/>
-    </div>
-  </div>
-
-  <!-- Custom Route -->
-  <div class="section">
-    <h2>DRAW ROUTE</h2>
-    <div style="font-size:10px;color:#555;margin-bottom:8px">Click map to add waypoints. Snaps to cycling paths via OSRM.</div>
-    <div class="mode-btns" style="margin-bottom:8px">
-      <div class="mode-btn" id="modeDrawRoute" onclick="setMode('drawroute')">✎ DRAW</div>
-      <div class="mode-btn" id="modeEditRoute" onclick="undoWaypoint()" style="opacity:.5">↩ UNDO</div>
-    </div>
-    <div id="routeInfo" style="display:none;font-size:10px;color:#00E5CC;margin-bottom:6px"></div>
-    <div style="display:flex;gap:6px">
-      <button class="sec" style="flex:1;font-size:10px" onclick="exportRouteGpx()">⬇ GPX</button>
-      <button class="danger" style="flex:1;font-size:10px" onclick="clearRoute()">✕ CLEAR</button>
-    </div>
-
-  <!-- Mode -->
-  <div class="section">
-    <h2>SELECTION MODE</h2>
-    <div class="mode-btns">
-      <div class="mode-btn active" id="modeRadius" onclick="setMode('radius')">⊙ RADIUS</div>
-      <div class="mode-btn" id="modeBox" onclick="setMode('box')">▣ DRAW BOX</div>
-    </div>
-    <div id="radiusControls" style="margin-top:8px">
-      <div class="zoom-row">
-        <label>Radius (km)</label>
-        <input type="number" id="radiusKm" value="10" min="1" max="50" style="width:60px;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:5px 8px;border-radius:6px;font-size:12px;outline:none" oninput="updatePreview()"/>
+    <div class="sec">
+      <h2>LOCATION</h2>
+      <div style="display:flex;gap:5px">
+        <input type="text" id="q" placeholder="Search city or place..."/>
+        <button class="btn" onclick="dosearch()" style="white-space:nowrap;flex-shrink:0">GO</button>
+      </div>
+      <div class="chips">
+        <span class="chip" onclick="goto(60.1699,24.9384,'Helsinki')">Helsinki</span>
+        <span class="chip" onclick="goto(60.3297,24.5051,'Nuuksio')">Nuuksio</span>
+        <span class="chip" onclick="goto(60.2748,24.496,'Pirttimäki')">Pirttimäki</span>
+        <span class="chip" onclick="goto(60.0786,24.3853,'Meiko')">Meiko</span>
       </div>
     </div>
-    <div class="zoom-row" style="margin-top:8px">
-      <label>Zoom level</label>
-      <select id="zoomSel" onchange="updatePreview()">
-        <option value="13">13 — Regional (~2km/tile)</option>
-        <option value="14" selected>14 — Trail (~1km/tile)</option>
-        <option value="15">15 — Detail (~500m/tile)</option>
-        <option value="16">16 — Street (~250m/tile)</option>
-      </select>
+
+    <div class="sec">
+      <h2>GPX ROUTE</h2>
+      <div class="drop" id="drop"
+           onclick="document.getElementById('gpxf').click()"
+           ondragover="event.preventDefault();this.classList.add('over')"
+           ondragleave="this.classList.remove('over')"
+           ondrop="onDrop(event)">
+        Drop GPX file or click to browse
+      </div>
+      <input type="file" id="gpxf" accept=".gpx" style="display:none" onchange="loadGpx(this.files[0])"/>
+      <div id="gpxi" style="font-size:10px;color:#00E5CC;margin-top:5px;display:none"></div>
     </div>
+
+    <div class="sec">
+      <h2>DRAW ROUTE</h2>
+      <div style="font-size:10px;color:#555;margin-bottom:6px">Click map to add waypoints — snaps to cycling paths</div>
+      <div style="display:flex;gap:5px">
+        <div class="mb" id="mbD" onclick="setMode('draw')">✎ DRAW</div>
+        <div class="mb" onclick="undo()">↩ UNDO</div>
+      </div>
+      <div id="ri" style="font-size:10px;color:#00E5CC;margin-top:5px;display:none"></div>
+      <div class="brow">
+        <button class="btn s" onclick="exportGpx()">⬇ GPX</button>
+        <button class="btn r" onclick="clearRoute()">✕ CLEAR</button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>SELECTION MODE</h2>
+      <div style="display:flex;gap:5px">
+        <div class="mb on" id="mbR" onclick="setMode('radius')">⊙ RADIUS</div>
+        <div class="mb" id="mbB" onclick="setMode('box')">▣ BOX</div>
+      </div>
+      <div id="rc" style="margin-top:7px">
+        <div class="row">
+          <label>Radius (km)</label>
+          <input type="number" id="rad" value="10" min="1" max="50" style="width:60px" oninput="updatePrev()"/>
+        </div>
+      </div>
+      <div class="row">
+        <label>Buffer (km)</label>
+        <input type="number" id="buf" value="1" min="0.5" max="5" step="0.5" style="width:55px"/>
+        <select id="zoom" onchange="updatePrev()" style="width:auto;flex-shrink:0">
+          <option value="13">z13</option>
+          <option value="14" selected>z14</option>
+          <option value="15">z15</option>
+          <option value="16">z16</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>ESTIMATE</h2>
+      <div class="stats">
+        <div class="sb" id="sT"><div class="v" id="vT">—</div><div class="l">TILES</div></div>
+        <div class="sb" id="sM"><div class="v" id="vM">—</div><div class="l">FLASH MB</div></div>
+        <div class="sb"><div class="v" id="vA">—</div><div class="l">AREA KM²</div></div>
+        <div class="sb ok"><div class="v" id="vF">64</div><div class="l">MB FREE</div></div>
+      </div>
+      <div class="bar"><div class="barf" id="bf"></div></div>
+      <div style="font-size:9px;color:#555;margin-top:3px" id="bl">0% of 64MB</div>
+    </div>
+
+    <div class="sec">
+      <h2>BUILD IMAGE</h2>
+      <div class="brow">
+        <button class="btn" onclick="build()" id="btnB">⬇ DOWNLOAD &amp; BUILD</button>
+        <button class="btn s" onclick="clearSel()">✕</button>
+      </div>
+      <div class="prog" id="prog">
+        <div class="pb"><div class="pf" id="pf"></div></div>
+        <div class="pl" id="pl">...</div>
+      </div>
+      <div class="log" id="log"><span class="ok">Ready.</span> Select an area on the map.</div>
+      <div class="brow" id="sr" style="display:none">
+        <button class="btn" onclick="saveBin()">💾 .bin</button>
+        <button class="btn s" onclick="saveH()">📄 .h</button>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Stats -->
-  <div class="section">
-    <h2>TILE ESTIMATE</h2>
-    <div class="stats-grid">
-      <div class="stat-box" id="statTiles"><div class="val" id="valTiles">—</div><div class="lbl">TILES</div></div>
-      <div class="stat-box" id="statMB"><div class="val" id="valMB">—</div><div class="lbl">FLASH MB</div></div>
-      <div class="stat-box" id="statArea"><div class="val" id="valArea">—</div><div class="lbl">AREA KM²</div></div>
-      <div class="stat-box ok" id="statFree"><div class="val" id="valFree">64</div><div class="lbl">MB FREE</div></div>
-    </div>
-    <div class="flash-usage"><div class="flash-fill" id="flashFill"></div></div>
-    <div style="font-size:9px;color:#555;margin-top:4px" id="flashPct">0% of 64MB NOR Flash</div>
-  </div>
-
-  <!-- Download -->
-  <div class="section">
-    <h2>BUILD IMAGE</h2>
-    <div class="btn-row">
-      <button onclick="startDownload()" id="btnDownload">⬇ DOWNLOAD &amp; BUILD</button>
-      <button class="sec" onclick="clearSelection()">✕ CLEAR</button>
-    </div>
-    <div class="progress-wrap" id="progressWrap" style="display:none">
-      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-      <div class="progress-label" id="progressLabel">Starting...</div>
-    </div>
-    <div class="log" id="log"><span class="ok">Ready.</span> Select an area on the map.</div>
-    <div class="btn-row" id="saveRow" style="display:none">
-      <button onclick="saveImage()">💾 SAVE .bin</button>
-      <button class="sec" onclick="saveHeader()">📄 SAVE .h</button>
+  <div id="mapwrap">
+    <div id="map"></div>
+    <div id="overlay">
+      <div class="badge" id="cb">Click map to set center</div>
+      <div class="badge" id="sb2" style="display:none">—</div>
     </div>
   </div>
-
-</div>
-
-<!-- Map -->
-<div class="map-wrap">
-  <div id="map"></div>
-  <div class="map-overlay">
-    <div class="map-badge">Click map to set center<br><span id="coordBadge">—</span></div>
-    <div class="map-badge" id="selBadge" style="display:none">Selection active<br><span id="selDetail">—</span></div>
-  </div>
-</div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// ─── Custom route drawing ────────────────────────────────────────────────────
-let routeWaypoints = [];      // raw clicked points [{lat,lon}]
-let routeSegments  = [];      // OSRM-snapped polyline points per segment
-let routeMarkers   = [];      // waypoint markers on map
-let routePolylines = [];      // polyline layers per segment
-let routeDistKm    = 0;
+const map = L.map('map').setView([60.25,24.60],10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'© OpenStreetMap contributors',subdomains:'abc',maxZoom:19
+}).addTo(map);
+const cyc=L.tileLayer('https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png',{opacity:.7,maxZoom:19});
+L.control.layers({'🗺 Standard':L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{subdomains:'abc',maxZoom:19,attribution:'© OSM'})},{'🚴 Cycling overlay':cyc}).addTo(map);
+window.addEventListener('load',()=>setTimeout(()=>map.invalidateSize(),300));
 
-async function snapToRoad(from, to) {
-  // OSRM public API — cycling profile
-  const url = `https://router.project-osrm.org/route/v1/cycling/` +
-    `${from.lon},${from.lat};${to.lon},${to.lat}` +
-    `?overview=full&geometries=geojson`;
-  try {
-    const r = await fetch(url);
-    const data = await r.json();
-    if (data.code === 'Ok' && data.routes.length > 0) {
-      const coords = data.routes[0].geometry.coordinates;
-      const distM  = data.routes[0].distance;
-      // OSRM returns [lon,lat] — flip to [lat,lon] for Leaflet
-      return {
-        points: coords.map(c => [c[1], c[0]]),
-        distKm: distM / 1000
-      };
-    }
-  } catch(e) {}
-  // Fallback: straight line
-  return {
-    points: [[from.lat, from.lon], [to.lat, to.lon]],
-    distKm: haversine(from.lat, from.lon, to.lat, to.lon)
-  };
+let mode='radius',cLat=60.25,cLon=24.60;
+let selC=null,selR=null,selB=null,ds=null,dg=false;
+let gpxT=null,rtT=null,binData=null,binIdx=[];
+let wps=[],wpm=[],wpl=[],wpdist=0,gpxLy=null;
+
+function ll2t(lat,lon,z){const n=1<<z;return{x:Math.floor((lon+180)/360*n),y:Math.floor((1-Math.log(Math.tan(lat*Math.PI/180)+1/Math.cos(lat*Math.PI/180))/Math.PI)/2*n)};}
+function t2ll(x,y,z){const n=1<<z;return{lat:Math.atan(Math.sinh(Math.PI*(1-2*y/n)))*180/Math.PI,lon:x/n*360-180};}
+function tib(b,z){const ne=b.getNorthEast(),sw=b.getSouthWest(),t1=ll2t(ne.lat,sw.lng,z),t2=ll2t(sw.lat,ne.lng,z),a=[];for(let x=t1.x;x<=t2.x;x++)for(let y=t1.y;y<=t2.y;y++)a.push({x,y});return a;}
+function tir(lat,lon,km,z){const dl=km/111,dlo=km/(111*Math.cos(lat*Math.PI/180));return tib(L.latLngBounds([lat-dl,lon-dlo],[lat+dl,lon+dlo]),z);}
+function tar(pts,km,z){const s=new Set();for(const[lat,lon]of pts){const dl=km/111,dlo=km/(111*Math.cos(lat*Math.PI/180)),t1=ll2t(lat+dl,lon-dlo,z),t2=ll2t(lat-dl,lon+dlo,z);for(let x=t1.x;x<=t2.x;x++)for(let y=t1.y;y<=t2.y;y++)s.add(x+','+y);}return[...s].map(s=>{const[x,y]=s.split(',').map(Number);return{x,y};});}
+function hav(a,b,c,d){const R=6371,f=(c-a)*Math.PI/180,g=(d-b)*Math.PI/180,h=Math.sin(f/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(g/2)**2;return R*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));}
+
+function upStats(tiles){
+  const n=tiles?tiles.length:0,mb=(n*128/1024).toFixed(1),p=Math.min(100,n*128/1024/64*100).toFixed(0);
+  document.getElementById('vT').textContent=n||'—';
+  document.getElementById('vM').textContent=n?mb:'—';
+  document.getElementById('vF').textContent=n?(64-mb).toFixed(1):'64';
+  document.getElementById('bf').style.width=p+'%';
+  document.getElementById('bl').textContent=p+'% of 64MB NOR Flash';
+  const c=n>511?'e':n>400?'w':'ok';
+  document.getElementById('sT').className='sb '+c;
+  document.getElementById('sM').className='sb '+c;
 }
+function lg(m,c=''){const e=document.getElementById('log');e.innerHTML+=`\n<span class="${c}">${m}</span>`;e.scrollTop=e.scrollHeight;}
 
-function addWaypointMarker(lat, lon, idx) {
-  const isFirst = idx === 0;
-  const m = L.circleMarker([lat, lon], {
-    radius: isFirst ? 7 : 5,
-    color: isFirst ? '#00E5CC' : '#fff',
-    fillColor: isFirst ? '#00E5CC' : '#333',
-    fillOpacity: 1,
-    weight: 2
-  }).addTo(map);
-  m.bindTooltip(`WP ${idx+1}`, {permanent: false, direction: 'top'});
-  routeMarkers.push(m);
-}
-
-async function addRoutePoint(lat, lon) {
-  const wp = {lat, lon};
-  const idx = routeWaypoints.length;
-  routeWaypoints.push(wp);
-  addWaypointMarker(lat, lon, idx);
-
-  if (routeWaypoints.length >= 2) {
-    const prev = routeWaypoints[idx - 1];
-    log(`Routing segment ${idx}...`);
-    const seg = await snapToRoad(prev, wp);
-    routeDistKm += seg.distKm;
-    routeSegments.push(seg.points);
-
-    const line = L.polyline(seg.points, {
-      color: '#00E5CC', weight: 3, opacity: 0.9
-    }).addTo(map);
-    routePolylines.push(line);
-
-    updateRouteInfo();
-    updateRouteSelection();
-  }
-}
-
-function updateRouteInfo() {
-  const el = document.getElementById('routeInfo');
-  if (routeWaypoints.length === 0) { el.style.display='none'; return; }
-  el.style.display = 'block';
-  el.innerHTML = `${routeWaypoints.length} waypoints · ${routeDistKm.toFixed(1)} km`;
-}
-
-function updateRouteSelection() {
-  if (routeWaypoints.length < 2) return;
-  const allPoints = routeSegments.flat();
-  const buffer = parseFloat(document.getElementById('gpxBuffer').value) || 1;
-  const zoom = parseInt(document.getElementById('zoomSel').value);
-  gpxTiles = getTilesAlongRoute(allPoints, buffer, zoom);
-  selMode = 'gpx';
-  updateStats(gpxTiles);
-  document.getElementById('selBadge').style.display = 'block';
-  document.getElementById('selDetail').textContent = `${gpxTiles.length} tiles for route`;
-}
-
-function undoWaypoint() {
-  if (routeWaypoints.length === 0) return;
-  routeWaypoints.pop();
-  // Remove last marker
-  const m = routeMarkers.pop();
-  if (m) map.removeLayer(m);
-  // Remove last segment
-  if (routePolylines.length > 0) {
-    const l = routePolylines.pop();
-    map.removeLayer(l);
-    const seg = routeSegments.pop();
-    // Recalculate distance
-    if (seg) {
-      const segDist = haversine(
-        seg[0][0], seg[0][1],
-        seg[seg.length-1][0], seg[seg.length-1][1]
-      );
-      routeDistKm = Math.max(0, routeDistKm - segDist);
-    }
-  }
-  updateRouteInfo();
-  if (routeWaypoints.length >= 2) updateRouteSelection();
-  else { gpxTiles = null; updateStats(null); }
-}
-
-function clearRoute() {
-  routeMarkers.forEach(m => map.removeLayer(m));
-  routePolylines.forEach(l => map.removeLayer(l));
-  routeWaypoints = []; routeSegments = [];
-  routeMarkers = []; routePolylines = [];
-  routeDistKm = 0;
-  gpxTiles = null;
-  document.getElementById('routeInfo').style.display = 'none';
-  document.getElementById('selBadge').style.display = 'none';
-  updateStats(null);
-  log('Route cleared');
-}
-
-function exportRouteGpx() {
-  if (routeWaypoints.length < 2) { log('Draw a route first', 'warn'); return; }
-  const allPoints = routeSegments.flat();
-  const now = new Date().toISOString();
-  let gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="OSM Tile Builder"
-  xmlns="http://www.topografix.com/GPX/1/1">
-  <trk><name>Custom Route</name><trkseg>
-`;
-  for (const [lat, lon] of allPoints) {
-    gpx += `    <trkpt lat="${lat.toFixed(6)}" lon="${lon.toFixed(6)}"></trkpt>\n`;
-  }
-  gpx += `  </trkseg></trk>\n</gpx>`;
-  const blob = new Blob([gpx], {type: 'application/gpx+xml'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'custom_route.gpx';
-  a.click();
-  log('💾 Saved: custom_route.gpx', 'ok');
-}
-
-// ─── GPX import ──────────────────────────────────────────────────────────────
-let gpxLayer = null;
-let gpxTiles = null;
-
-function handleGpxDrop(e) {
-  e.preventDefault();
-  document.getElementById('gpxDrop').style.borderColor = '#2a2a2a';
-  document.getElementById('gpxDrop').style.color = '#555';
-  const file = e.dataTransfer.files[0];
-  if (file && file.name.endsWith('.gpx')) handleGpxFile(file);
-  else log('⚠️ Please drop a .gpx file', 'warn');
-}
-
-function handleGpxFile(file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      parseGpx(e.target.result, file.name);
-    } catch(err) {
-      log('GPX parse error: ' + err.message, 'err');
-    }
-  };
-  reader.readAsText(file);
-}
-
-function parseGpx(text, filename) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(text, 'application/xml');
-
-  const points = [];
-
-  // Track points
-  doc.querySelectorAll('trkpt').forEach(pt => {
-    const lat = parseFloat(pt.getAttribute('lat'));
-    const lon = parseFloat(pt.getAttribute('lon'));
-    if (!isNaN(lat) && !isNaN(lon)) points.push([lat, lon]);
-  });
-
-  // Route points fallback
-  if (points.length === 0) {
-    doc.querySelectorAll('rtept').forEach(pt => {
-      const lat = parseFloat(pt.getAttribute('lat'));
-      const lon = parseFloat(pt.getAttribute('lon'));
-      if (!isNaN(lat) && !isNaN(lon)) points.push([lat, lon]);
-    });
-  }
-
-  // Waypoints fallback
-  if (points.length === 0) {
-    doc.querySelectorAll('wpt').forEach(pt => {
-      const lat = parseFloat(pt.getAttribute('lat'));
-      const lon = parseFloat(pt.getAttribute('lon'));
-      if (!isNaN(lat) && !isNaN(lon)) points.push([lat, lon]);
-    });
-  }
-
-  if (points.length === 0) {
-    log('No track points found in GPX file', 'err');
-    return;
-  }
-
-  // Calculate route stats
-  let distKm = 0;
-  for (let i = 1; i < points.length; i++) {
-    distKm += haversine(points[i-1][0], points[i-1][1], points[i][0], points[i][1]);
-  }
-
-  // Remove old GPX layer
-  if (gpxLayer) { map.removeLayer(gpxLayer); gpxLayer = null; }
-  if (selRect)  { map.removeLayer(selRect);  selRect = null; }
-  if (selCircle){ map.removeLayer(selCircle); selCircle = null; }
-
-  // Draw route on map
-  gpxLayer = L.layerGroup([
-    L.polyline(points, {color: '#00E5CC', weight: 3, opacity: 0.9}),
-    L.circleMarker(points[0], {radius: 6, color: '#00E5CC', fillColor: '#fff', fillOpacity: 1, weight: 2}),
-    L.circleMarker(points[points.length-1], {radius: 6, color: '#ff4444', fillColor: '#fff', fillOpacity: 1, weight: 2}),
-  ]).addTo(map);
-
-  // Fit map to route
-  const bounds = L.latLngBounds(points);
-  map.fitBounds(bounds, {padding: [40, 40]});
-
-  // Calculate tiles needed with buffer
-  const buffer = parseFloat(document.getElementById('gpxBuffer').value) || 1;
-  const zoom = parseInt(document.getElementById('zoomSel').value);
-  gpxTiles = getTilesAlongRoute(points, buffer, zoom);
-
-  // Draw tile coverage box
-  const tileSet = new Set(gpxTiles.map(t => `${t.x},${t.y}`));
-  const tileArr = gpxTiles;
-  if (tileArr.length > 0) {
-    const txs = tileArr.map(t=>t.x), tys = tileArr.map(t=>t.y);
-    const coverBounds = L.latLngBounds(
-      [tileToLatLon(Math.min(...txs), Math.min(...tys), zoom).lat,
-       tileToLatLon(Math.min(...txs), Math.min(...tys), zoom).lon],
-      [tileToLatLon(Math.max(...txs)+1, Math.max(...tys)+1, zoom).lat,
-       tileToLatLon(Math.max(...txs)+1, Math.max(...tys)+1, zoom).lon]
-    );
-    selRect = L.rectangle(coverBounds, {
-      color: '#00E5CC', weight: 1, dashArray: '4 4',
-      fillColor: '#00E5CC', fillOpacity: 0.05
-    }).addTo(map);
-    selectedBounds = coverBounds;
-  }
-
-  // Update UI
-  const name = doc.querySelector('name')?.textContent || filename;
-  document.getElementById('gpxInfo').style.display = 'block';
-  document.getElementById('gpxInfo').innerHTML =
-    `📍 ${name}<br>` +
-    `${points.length} pts · ${distKm.toFixed(1)} km · ${gpxTiles.length} tiles`;
-
-  document.getElementById('gpxDrop').style.borderColor = '#00E5CC';
-  document.getElementById('gpxDrop').textContent = '✓ ' + filename;
-
-  updateStats(gpxTiles);
-  document.getElementById('selBadge').style.display = 'block';
-  document.getElementById('selDetail').textContent = `${gpxTiles.length} tiles for route`;
-
-  // Switch to box mode so download uses gpxTiles
-  selMode = 'gpx';
-  document.getElementById('modeRadius').className = 'mode-btn';
-  document.getElementById('modeBox').className = 'mode-btn';
-
-  log(`✅ GPX loaded: ${points.length} pts, ${distKm.toFixed(1)} km, ${gpxTiles.length} tiles`, 'ok');
-}
-
-function getTilesAlongRoute(points, bufferKm, zoom) {
-  const tileSet = new Set();
-  const bufLat = bufferKm / 111;
-
-  for (const [lat, lon] of points) {
-    const bufLon = bufferKm / (111 * Math.cos(lat * Math.PI/180));
-    const t1 = latLonToTile(lat + bufLat, lon - bufLon, zoom);
-    const t2 = latLonToTile(lat - bufLat, lon + bufLon, zoom);
-    for (let x = t1.x; x <= t2.x; x++)
-      for (let y = t1.y; y <= t2.y; y++)
-        tileSet.add(`${x},${y}`);
-  }
-
-  return [...tileSet].map(s => {
-    const [x, y] = s.split(',').map(Number);
-    return {x, y};
-  });
-}
-
-function haversine(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = (lat2-lat1) * Math.PI/180;
-  const dLon = (lon2-lon1) * Math.PI/180;
-  const a = Math.sin(dLat/2)**2 +
-            Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-const map = L.map('map', {zoomControl: true}).setView([60.25, 24.60], 10);
-
-const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-  subdomains: 'abc', maxZoom: 19,
+map.on('click',async function(e){
+  if(mode==='draw'){await addWp(e.latlng.lat,e.latlng.lng);return;}
+  if(mode==='radius'){cLat=e.latlng.lat;cLon=e.latlng.lng;document.getElementById('cb').textContent=`${cLat.toFixed(4)}, ${cLon.toFixed(4)}`;updatePrev();}
+});
+map.on('mousedown',function(e){if(mode!=='box')return;dg=true;ds=e.latlng;if(selR){map.removeLayer(selR);selR=null;}map.dragging.disable();});
+map.on('mousemove',function(e){if(!dg||!ds)return;if(selR)map.removeLayer(selR);selR=L.rectangle([ds,e.latlng],{color:'#00E5CC',weight:2,fillColor:'#00E5CC',fillOpacity:.1,dashArray:'4 4'}).addTo(map);});
+map.on('mouseup',function(e){
+  if(!dg||!ds)return;dg=false;map.dragging.enable();
+  const end=e.latlng;
+  if(Math.abs(ds.lat-end.lat)<0.001&&Math.abs(ds.lng-end.lng)<0.001){if(selR){map.removeLayer(selR);selR=null;}ds=null;return;}
+  selB=L.latLngBounds(ds,end);ds=null;
+  if(selR)map.removeLayer(selR);
+  selR=L.rectangle(selB,{color:'#00E5CC',weight:2,fillColor:'#00E5CC',fillOpacity:.1}).addTo(map);
+  const z=parseInt(document.getElementById('zoom').value),tiles=tib(selB,z);
+  upStats(tiles);document.getElementById('sb2').style.display='block';document.getElementById('sb2').textContent=`${tiles.length} tiles`;
+  lg(`Box: ${tiles.length} tiles`,'ok');
 });
 
-const osmCycle = L.tileLayer('https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap, Waymarked Trails',
-  maxZoom: 19, opacity: 0.7,
-});
-
-const osmOutdoors = L.tileLayer('https://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=notneeded', {
-  attribution: '© Thunderforest, © OpenStreetMap',
-  subdomains: 'abc', maxZoom: 19,
-});
-
-osmStandard.addTo(map);
-
-// Layer control
-L.control.layers({
-  '🗺 Standard OSM': osmStandard,
-}, {
-  '🚴 Cycling routes overlay': osmCycle,
-}, {position: 'topright'}).addTo(map);
-
-// Dark map filter
-const mapEl = document.getElementById('map');
-
-let centerLat = 60.25, centerLon = 24.60;
-let selMode = 'radius';
-let selCircle = null, selRect = null;
-let drawStart = null, isDrawing = false;
-let selectedBounds = null;
-let builtImage = null;
-let tileIndex = [];
-
-// ─── Coordinate math ────────────────────────────────────────────────────────
-function latLonToTile(lat, lon, zoom) {
-  const n = Math.pow(2, zoom);
-  const x = Math.floor((lon + 180) / 360 * n);
-  const latR = lat * Math.PI / 180;
-  const y = Math.floor((1 - Math.log(Math.tan(latR) + 1/Math.cos(latR)) / Math.PI) / 2 * n);
-  return {x, y};
+function setMode(m){
+  mode=m;
+  ['mbR','mbB','mbD'].forEach(id=>{const el=document.getElementById(id);if(el)el.className='mb';});
+  if(m==='radius'&&document.getElementById('mbR'))document.getElementById('mbR').className='mb on';
+  if(m==='box'&&document.getElementById('mbB'))document.getElementById('mbB').className='mb on';
+  if(m==='draw'&&document.getElementById('mbD'))document.getElementById('mbD').className='mb on';
+  document.getElementById('rc').style.display=m==='radius'?'block':'none';
+  document.getElementById('map').style.cursor=(m==='box'||m==='draw')?'crosshair':'';
+  if(m==='radius'){map.dragging.enable();updatePrev();}
+  if(m==='box')map.dragging.enable();
 }
 
-function tileToLatLon(x, y, zoom) {
-  const n = Math.pow(2, zoom);
-  const lon = x / n * 360 - 180;
-  const latR = Math.atan(Math.sinh(Math.PI * (1 - 2*y/n)));
-  const lat = latR * 180 / Math.PI;
-  return {lat, lon};
+function updatePrev(){
+  if(mode!=='radius')return;
+  const r=parseFloat(document.getElementById('rad').value)||10,z=parseInt(document.getElementById('zoom').value);
+  if(selC)map.removeLayer(selC);
+  selC=L.circle([cLat,cLon],{radius:r*1000,color:'#00E5CC',weight:2,fillColor:'#00E5CC',fillOpacity:.07}).addTo(map);
+  upStats(tir(cLat,cLon,r,z));
 }
 
-function getTilesInBounds(bounds, zoom) {
-  const ne = bounds.getNorthEast();
-  const sw = bounds.getSouthWest();
-  const tileNW = latLonToTile(ne.lat, sw.lng, zoom);
-  const tileSE = latLonToTile(sw.lat, ne.lng, zoom);
-  const tiles = [];
-  for (let x = tileNW.x; x <= tileSE.x; x++)
-    for (let y = tileNW.y; y <= tileSE.y; y++)
-      tiles.push({x, y});
-  return tiles;
+async function dosearch(){
+  const q=document.getElementById('q').value.trim();if(!q)return;lg('Searching...');
+  try{const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`);const d=await r.json();if(!d.length){lg('Not found','er');return;}goto(parseFloat(d[0].lat),parseFloat(d[0].lon),d[0].display_name.split(',')[0]);}catch(e){lg('Error','er');}
+}
+function goto(lat,lon,name){cLat=lat;cLon=lon;map.setView([lat,lon],13);document.getElementById('q').value=name||'';document.getElementById('cb').textContent=`${lat.toFixed(4)}, ${lon.toFixed(4)}`;updatePrev();lg('→ '+name,'ok');}
+document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')dosearch();});
+
+function onDrop(e){e.preventDefault();document.getElementById('drop').classList.remove('over');const f=e.dataTransfer.files[0];if(f&&f.name.endsWith('.gpx'))loadGpx(f);else lg('Not a GPX file','er');}
+function loadGpx(file){const r=new FileReader();r.onload=e=>parseGpx(e.target.result,file.name);r.readAsText(file);}
+function parseGpx(text,name){
+  const doc=new DOMParser().parseFromString(text,'application/xml'),pts=[];
+  doc.querySelectorAll('trkpt,rtept,wpt').forEach(p=>{const lat=parseFloat(p.getAttribute('lat')),lon=parseFloat(p.getAttribute('lon'));if(!isNaN(lat)&&!isNaN(lon))pts.push([lat,lon]);});
+  if(!pts.length){lg('No points','er');return;}
+  let d=0;for(let i=1;i<pts.length;i++)d+=hav(pts[i-1][0],pts[i-1][1],pts[i][0],pts[i][1]);
+  if(gpxLy)map.removeLayer(gpxLy);
+  gpxLy=L.layerGroup([L.polyline(pts,{color:'#00E5CC',weight:3}),L.circleMarker(pts[0],{radius:5,color:'#00E5CC',fillColor:'#fff',fillOpacity:1,weight:2}),L.circleMarker(pts[pts.length-1],{radius:5,color:'#f44',fillColor:'#fff',fillOpacity:1,weight:2})]).addTo(map);
+  map.fitBounds(L.latLngBounds(pts),{padding:[30,30]});
+  const z=parseInt(document.getElementById('zoom').value),buf=parseFloat(document.getElementById('buf').value)||1;
+  gpxT=tar(pts,buf,z);mode='gpx';
+  document.getElementById('drop').textContent='✓ '+name;
+  document.getElementById('gpxi').style.display='block';document.getElementById('gpxi').textContent=`${pts.length} pts · ${d.toFixed(1)} km · ${gpxT.length} tiles`;
+  document.getElementById('sb2').style.display='block';document.getElementById('sb2').textContent=`GPX: ${gpxT.length} tiles`;
+  upStats(gpxT);lg(`GPX: ${pts.length} pts, ${d.toFixed(1)} km, ${gpxT.length} tiles`,'ok');
 }
 
-function getTilesInRadius(lat, lon, radiusKm, zoom) {
-  const latDeg = radiusKm / 111;
-  const lonDeg = radiusKm / (111 * Math.cos(lat * Math.PI/180));
-  const bounds = L.latLngBounds(
-    [lat - latDeg, lon - lonDeg],
-    [lat + latDeg, lon + lonDeg]
-  );
-  return getTilesInBounds(bounds, zoom);
+async function snapRoute(a,b){
+  try{const r=await fetch(`https://router.project-osrm.org/route/v1/cycling/${a.lon},${a.lat};${b.lon},${b.lat}?overview=full&geometries=geojson`);const d=await r.json();if(d.code==='Ok'&&d.routes.length)return{pts:d.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]),km:d.routes[0].distance/1000};}catch(e){}
+  return{pts:[[a.lat,a.lon],[b.lat,b.lon]],km:hav(a.lat,a.lon,b.lat,b.lon)};
+}
+async function addWp(lat,lon){
+  const wp={lat,lon},i=wps.length;wps.push(wp);
+  const m=L.circleMarker([lat,lon],{radius:i===0?7:5,color:i===0?'#00E5CC':'#fff',fillColor:i===0?'#00E5CC':'#333',fillOpacity:1,weight:2}).addTo(map);
+  wpm.push(m);
+  if(wps.length>=2){lg('Routing…');const seg=await snapRoute(wps[i-1],wp);wpdist+=seg.km;const ln=L.polyline(seg.pts,{color:'#00E5CC',weight:3}).addTo(map);wpl.push({ln,pts:seg.pts,km:seg.km});upRouteInfo();upRouteTiles();}
+}
+function upRouteInfo(){const e=document.getElementById('ri');if(!wps.length){e.style.display='none';return;}e.style.display='block';e.textContent=`${wps.length} waypoints · ${wpdist.toFixed(1)} km`;}
+function upRouteTiles(){const pts=wpl.flatMap(s=>s.pts),z=parseInt(document.getElementById('zoom').value),buf=parseFloat(document.getElementById('buf').value)||1;rtT=tar(pts,buf,z);mode='route';upStats(rtT);document.getElementById('sb2').style.display='block';document.getElementById('sb2').textContent=`Route: ${rtT.length} tiles`;}
+function undo(){if(!wps.length)return;wps.pop();map.removeLayer(wpm.pop());if(wpl.length){const s=wpl.pop();map.removeLayer(s.ln);wpdist=Math.max(0,wpdist-s.km);}upRouteInfo();if(wpl.length)upRouteTiles();else{rtT=null;upStats(null);}}
+function clearRoute(){wpm.forEach(m=>map.removeLayer(m));wpl.forEach(s=>map.removeLayer(s.ln));wps=[];wpm=[];wpl=[];wpdist=0;rtT=null;upRouteInfo();upStats(null);document.getElementById('sb2').style.display='none';lg('Route cleared');}
+function exportGpx(){if(!wpl.length){lg('Draw a route first','wn');return;}const pts=wpl.flatMap(s=>s.pts);let g=`<?xml version="1.0"?>\n<gpx version="1.1">\n<trk><trkseg>\n`;for(const[lat,lon]of pts)g+=`<trkpt lat="${lat.toFixed(6)}" lon="${lon.toFixed(6)}"></trkpt>\n`;g+=`</trkseg></trk>\n</gpx>`;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([g],{type:'application/gpx+xml'}));a.download='route.gpx';a.click();lg('Saved route.gpx','ok');}
+
+function clearSel(){
+  if(selC){map.removeLayer(selC);selC=null;}if(selR){map.removeLayer(selR);selR=null;}if(gpxLy){map.removeLayer(gpxLy);gpxLy=null;}
+  selB=null;gpxT=null;rtT=null;binData=null;binIdx=[];mode='radius';setMode('radius');
+  document.getElementById('sb2').style.display='none';document.getElementById('sr').style.display='none';
+  document.getElementById('prog').style.display='none';document.getElementById('gpxi').style.display='none';
+  document.getElementById('drop').textContent='Drop GPX file or click to browse';upStats(null);lg('Cleared');
 }
 
-// ─── UI helpers ─────────────────────────────────────────────────────────────
-function log(msg, cls='') {
-  const el = document.getElementById('log');
-  el.innerHTML += `\n<span class="${cls}">${msg}</span>`;
-  el.scrollTop = el.scrollHeight;
-}
-
-function updateStats(tiles) {
-  const FLASH_MB = 64;
-  const MB_PER_TILE = 128/1024;
-  const n = tiles ? tiles.length : 0;
-  const mb = (n * MB_PER_TILE).toFixed(1);
-  const pct = (n * MB_PER_TILE / FLASH_MB * 100).toFixed(0);
-
-  document.getElementById('valTiles').textContent = n || '—';
-  document.getElementById('valMB').textContent = n ? mb : '—';
-  document.getElementById('flashFill').style.width = pct + '%';
-  document.getElementById('flashPct').textContent = `${pct}% of ${FLASH_MB}MB NOR Flash`;
-
-  const statTiles = document.getElementById('statTiles');
-  const statMB = document.getElementById('statMB');
-  statTiles.className = 'stat-box' + (n > 511 ? ' err' : n > 400 ? ' warn' : ' ok');
-  statMB.className = 'stat-box' + (n > 511 ? ' err' : n > 400 ? ' warn' : ' ok');
-
-  if (n > 511) {
-    log(`⚠️ Too many tiles (${n} > 511). Reduce area or zoom.`, 'warn');
-  }
-}
-
-function updatePreview() {
-  if (!selectedBounds && selMode === 'radius') {
-    const r = parseFloat(document.getElementById('radiusKm').value) || 10;
-    const zoom = parseInt(document.getElementById('zoomSel').value);
-    const tiles = getTilesInRadius(centerLat, centerLon, r, zoom);
-    updateStats(tiles);
-    drawRadiusCircle(centerLat, centerLon, r);
-  } else if (selectedBounds) {
-    const zoom = parseInt(document.getElementById('zoomSel').value);
-    const tiles = getTilesInBounds(selectedBounds, zoom);
-    updateStats(tiles);
-  }
-}
-
-// ─── Map interaction ─────────────────────────────────────────────────────────
-map.on('click', function(e) {
-  if (selMode === 'drawroute') {
-    addRoutePoint(e.latlng.lat, e.latlng.lng);
-    return;
-  }
-  if (selMode === 'radius' && !isDrawing) {
-    centerLat = e.latlng.lat;
-    centerLon = e.latlng.lng;
-    document.getElementById('coordBadge').textContent =
-      `${centerLat.toFixed(4)}, ${centerLon.toFixed(4)}`;
-    updatePreview();
-  }
-});
-
-map.on('mousedown', function(e) {
-  if (selMode !== 'box') return;
-  isDrawing = true;
-  drawStart = e.latlng;
-  if (selRect) { map.removeLayer(selRect); selRect = null; }
-  map.dragging.disable();
-  L.DomEvent.stopPropagation(e);
-});
-
-map.on('mousemove', function(e) {
-  if (!isDrawing || !drawStart) return;
-  if (selRect) map.removeLayer(selRect);
-  selRect = L.rectangle([drawStart, e.latlng], {
-    color: '#00E5CC', weight: 2,
-    fillColor: '#00E5CC', fillOpacity: 0.12,
-    dashArray: '4 4'
-  }).addTo(map);
-});
-
-map.on('mouseup', function(e) {
-  if (!isDrawing || !drawStart) return;
-  isDrawing = false;
-  map.dragging.enable();
-
-  const endLatLng = e.latlng;
-  // Ignore tiny accidental clicks
-  if (Math.abs(drawStart.lat - endLatLng.lat) < 0.001 &&
-      Math.abs(drawStart.lng - endLatLng.lng) < 0.001) {
-    if (selRect) { map.removeLayer(selRect); selRect = null; }
-    drawStart = null;
-    return;
-  }
-
-  selectedBounds = L.latLngBounds(drawStart, endLatLng);
-  drawStart = null;
-
-  // Redraw final solid box
-  if (selRect) map.removeLayer(selRect);
-  selRect = L.rectangle(selectedBounds, {
-    color: '#00E5CC', weight: 2,
-    fillColor: '#00E5CC', fillOpacity: 0.12
-  }).addTo(map);
-
-  const zoom = parseInt(document.getElementById('zoomSel').value);
-  const tiles = getTilesInBounds(selectedBounds, zoom);
-  updateStats(tiles);
-  document.getElementById('selBadge').style.display = 'block';
-  document.getElementById('selDetail').textContent = `${tiles.length} tiles selected`;
-  log(`✅ Box selected: ${tiles.length} tiles at zoom ${zoom}`, 'ok');
-});
-
-function drawRadiusCircle(lat, lon, radiusKm) {
-  if (selCircle) map.removeLayer(selCircle);
-  selCircle = L.circle([lat, lon], {
-    radius: radiusKm * 1000,
-    color: '#00E5CC', weight: 2,
-    fillColor: '#00E5CC', fillOpacity: 0.08
-  }).addTo(map);
-}
-
-// ─── Mode toggle ─────────────────────────────────────────────────────────────
-function setMode(mode) {
-  selMode = mode;
-  document.getElementById('modeRadius').className = 'mode-btn' + (mode==='radius' ? ' active' : '');
-  document.getElementById('modeBox').className = 'mode-btn' + (mode==='box' ? ' active' : '');
-  document.getElementById('modeDrawRoute').className = 'mode-btn' + (mode==='drawroute' ? ' active' : '');
-
-  document.getElementById('radiusControls').style.display = mode==='radius' ? 'block' : 'none';
-
-  if (mode === 'drawroute') {
-    map.dragging.enable();
-    document.getElementById('map').style.cursor = 'crosshair';
-    document.getElementById('coordBadge').textContent = 'Click to add waypoints';
-    if (selCircle) { map.removeLayer(selCircle); selCircle = null; }
-    if (selRect)   { map.removeLayer(selRect);   selRect = null; }
-    selectedBounds = null;
-    log('Draw mode: click map to add waypoints. Snapping to cycling paths.', 'ok');
-  } else if (mode === 'box') {
-    map.dragging.enable();
-    document.getElementById('coordBadge').textContent = 'Click and drag to draw box';
-    document.getElementById('map').style.cursor = 'crosshair';
-    if (selCircle) { map.removeLayer(selCircle); selCircle = null; }
-  } else {
-    map.dragging.enable();
-    selectedBounds = null;
-    isDrawing = false;
-    if (selRect) { map.removeLayer(selRect); selRect = null; }
-    document.getElementById('selBadge').style.display = 'none';
-    document.getElementById('map').style.cursor = '';
-    updatePreview();
-  }
-}
-
-// ─── Search ──────────────────────────────────────────────────────────────────
-async function searchLocation() {
-  const q = document.getElementById('searchInput').value.trim();
-  if (!q) return;
-  log(`Searching: ${q}...`);
-  try {
-    const r = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`,
-      {headers: {'Accept-Language': 'en'}}
-    );
-    const data = await r.json();
-    if (data.length === 0) { log('Location not found', 'err'); return; }
-    const {lat, lon, display_name} = data[0];
-    goTo(parseFloat(lat), parseFloat(lon), display_name.split(',')[0]);
-  } catch(e) {
-    log('Search error: ' + e.message, 'err');
-  }
-}
-
-function goTo(lat, lon, name) {
-  centerLat = lat; centerLon = lon;
-  map.setView([lat, lon], 13);
-  document.getElementById('coordBadge').textContent = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-  document.getElementById('searchInput').value = name || '';
-  updatePreview();
-  log(`Moved to: ${name}`, 'ok');
-}
-
-document.getElementById('searchInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') searchLocation();
-});
-
-// ─── Download & build ────────────────────────────────────────────────────────
-async function startDownload() {
-  const zoom = parseInt(document.getElementById('zoomSel').value);
+async function build(){
+  const z=parseInt(document.getElementById('zoom').value);
   let tiles;
-
-  if (selMode === 'gpx' && gpxTiles && gpxTiles.length > 0) {
-    tiles = gpxTiles;
-  } else if (selMode === 'radius') {
-    const r = parseFloat(document.getElementById('radiusKm').value) || 10;
-    tiles = getTilesInRadius(centerLat, centerLon, r, zoom);
-  } else if (selectedBounds) {
-    tiles = getTilesInBounds(selectedBounds, zoom);
-  } else {
-    log('⚠️ Select an area or load a GPX file first', 'warn'); return;
-  }
-
-  if (tiles.length === 0) { log('No tiles in selection', 'err'); return; }
-  if (tiles.length > 511) { log(`Too many tiles (${tiles.length}). Reduce area.`, 'err'); return; }
-
-  document.getElementById('progressWrap').style.display = 'block';
-  document.getElementById('btnDownload').disabled = true;
-  document.getElementById('saveRow').style.display = 'none';
-  builtImage = null;
-  tileIndex = [];
-
-  log(`Starting download of ${tiles.length} tiles at zoom ${zoom}...`, 'ok');
-
-  const tileDataMap = new Map();
-  let done = 0, failed = 0;
-
-  for (let i = 0; i < tiles.length; i++) {
-    const {x, y} = tiles[i];
-    const pct = Math.round((i+1)/tiles.length*100);
-    document.getElementById('progressFill').style.width = pct + '%';
-    document.getElementById('progressLabel').textContent =
-      `Downloading ${i+1}/${tiles.length} tiles...`;
-
-    const servers = [
-      `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`,
-      `https://a.tile.openstreetmap.org/${zoom}/${x}/${y}.png`,
-      `https://b.tile.openstreetmap.org/${zoom}/${x}/${y}.png`,
-    ];
-
-    // Try direct first, fall back to CORS proxy
-    let ok = false;
-    for (const url of servers) {
-      for (const prefix of ['', 'https://corsproxy.io/?']) {
-        try {
-          const r = await fetch(prefix + encodeURIComponent(url), {
-            headers: prefix ? {} : {'Referer': 'https://www.openstreetmap.org/'}
-          });
-          if (r.ok) {
-            const blob = await r.blob();
-            const ab = await blob.arrayBuffer();
-            tileDataMap.set(`${x},${y}`, {x, y, png: new Uint8Array(ab)});
-            done++;
-            ok = true;
-            break;
-          }
-        } catch(e) {}
-        if (ok) break;
-      }
-      if (ok) break;
+  if(mode==='gpx'&&gpxT)tiles=gpxT;
+  else if(mode==='route'&&rtT)tiles=rtT;
+  else if(mode==='radius')tiles=tir(cLat,cLon,parseFloat(document.getElementById('rad').value)||10,z);
+  else if(selB)tiles=tib(selB,z);
+  else{lg('Select an area first','wn');return;}
+  if(!tiles.length){lg('No tiles','er');return;}
+  if(tiles.length>511){lg(`Too many tiles (${tiles.length})—reduce area`,'er');return;}
+  document.getElementById('prog').style.display='block';
+  document.getElementById('btnB').disabled=true;
+  document.getElementById('sr').style.display='none';
+  binData=null;binIdx=[];
+  lg(`Downloading ${tiles.length} tiles…`,'ok');
+  const tmap=new Map();let done=0,fail=0;
+  for(let i=0;i<tiles.length;i++){
+    const{x,y}=tiles[i];
+    document.getElementById('pf').style.width=Math.round((i+1)/tiles.length*100)+'%';
+    document.getElementById('pl').textContent=`${i+1}/${tiles.length}…`;
+    let ok=false;
+    for(const url of[`https://tile.openstreetmap.org/${z}/${x}/${y}.png`,`https://a.tile.openstreetmap.org/${z}/${x}/${y}.png`]){
+      try{const r=await fetch(url);if(r.ok){tmap.set(`${x},${y}`,{x,y,png:new Uint8Array(await r.arrayBuffer())});done++;ok=true;break;}}catch(e){}
     }
-    if (!ok) {
-      failed++;
-      log(`✗ Tile ${x},${y} failed`, 'err');
-    }
-    await new Promise(r => setTimeout(r, 80)); // Rate limit
+    if(!ok)fail++;
+    await new Promise(r=>setTimeout(r,80));
   }
-
-  log(`Downloaded: ${done} ok, ${failed} failed`, done > 0 ? 'ok' : 'err');
-  if (done === 0) { document.getElementById('btnDownload').disabled = false; return; }
-
-  // Build binary image
-  log('Converting to RGB565 and building flash image...', 'ok');
-  document.getElementById('progressLabel').textContent = 'Building flash image...';
-
-  try {
-    const image = await buildFlashImage(tileDataMap, zoom);
-    builtImage = image;
-    log(`✅ Flash image built: ${(image.byteLength/1024/1024).toFixed(2)} MB`, 'ok');
-    document.getElementById('progressLabel').textContent = '✅ Done!';
-    document.getElementById('progressFill').style.width = '100%';
-    document.getElementById('saveRow').style.display = 'flex';
-  } catch(e) {
-    log('Build error: ' + e.message, 'err');
-  }
-
-  document.getElementById('btnDownload').disabled = false;
+  lg(`${done} ok, ${fail} failed`,done?'ok':'er');
+  if(!done){document.getElementById('btnB').disabled=false;return;}
+  lg('Converting to RGB565…','ok');
+  try{binData=await mkImg(tmap,z);lg(`✅ ${(binData.byteLength/1024/1024).toFixed(2)} MB ready`,'ok');document.getElementById('sr').style.display='flex';document.getElementById('pl').textContent='✅ Done';}
+  catch(e){lg('Error: '+e.message,'er');}
+  document.getElementById('btnB').disabled=false;
 }
 
-async function buildFlashImage(tileDataMap, zoom) {
-  const tiles = [...tileDataMap.values()];
-  const TILE_BYTES = 256 * 256 * 2;
-  const HEADER_BASE = 32;
-  const INDEX_ENTRY = 12;
-  const headerRaw = HEADER_BASE + tiles.length * INDEX_ENTRY;
-  const headerPadded = Math.ceil(headerRaw / 4096) * 4096;
-
-  // Convert PNG → RGB565 using canvas
-  const rgb565Map = new Map();
-  const canvas = document.createElement('canvas');
-  canvas.width = 256; canvas.height = 256;
-  const ctx = canvas.getContext('2d');
-
-  for (let i = 0; i < tiles.length; i++) {
-    const {x, y, png} = tiles[i];
-    document.getElementById('progressLabel').textContent =
-      `Converting tile ${i+1}/${tiles.length}...`;
-    document.getElementById('progressFill').style.width =
-      Math.round(i/tiles.length*100) + '%';
-
-    const blob = new Blob([png], {type: 'image/png'});
-    const url = URL.createObjectURL(blob);
-    await new Promise((res, rej) => {
-      const img = new Image();
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0, 256, 256);
-        URL.revokeObjectURL(url);
-        const imgData = ctx.getImageData(0, 0, 256, 256);
-        const rgb = new Uint8Array(TILE_BYTES);
-        for (let p = 0; p < 256*256; p++) {
-          const r = imgData.data[p*4];
-          const g = imgData.data[p*4+1];
-          const b = imgData.data[p*4+2];
-          const v = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-          rgb[p*2]   = v & 0xFF;
-          rgb[p*2+1] = (v >> 8) & 0xFF;
-        }
-        rgb565Map.set(`${x},${y}`, rgb);
-        res();
-      };
-      img.onerror = rej;
-      img.src = url;
-    });
-    await new Promise(r => setTimeout(r, 0));
+async function mkImg(tmap,zoom){
+  const tiles=[...tmap.values()],TB=256*256*2,hB=32+tiles.length*12,hP=Math.ceil(hB/4096)*4096;
+  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;const ctx=canvas.getContext('2d');
+  const parts=[];
+  for(let i=0;i<tiles.length;i++){
+    const{x,y,png}=tiles[i];
+    document.getElementById('pl').textContent=`Converting ${i+1}/${tiles.length}…`;
+    document.getElementById('pf').style.width=Math.round(i/tiles.length*100)+'%';
+    const blob=new Blob([png],{type:'image/png'}),url=URL.createObjectURL(blob);
+    await new Promise((res,rej)=>{const img=new Image();img.onload=()=>{ctx.drawImage(img,0,0,256,256);URL.revokeObjectURL(url);const d=ctx.getImageData(0,0,256,256),rgb=new Uint8Array(TB);for(let p=0;p<65536;p++){const r=d.data[p*4],g=d.data[p*4+1],b=d.data[p*4+2],v=((r&0xF8)<<8)|((g&0xFC)<<3)|(b>>3);rgb[p*2]=v&0xFF;rgb[p*2+1]=(v>>8)&0xFF;}parts.push({x,y,rgb});res();};img.onerror=rej;img.src=url;});
+    await new Promise(r=>setTimeout(r,0));
   }
-
-  // Build header
-  const xVals = tiles.map(t => t.x);
-  const yVals = tiles.map(t => t.y);
-  const xMin = Math.min(...xVals), xMax = Math.max(...xVals);
-  const yMin = Math.min(...yVals), yMax = Math.max(...yVals);
-
-  const totalSize = headerPadded + tiles.length * TILE_BYTES;
-  const buf = new ArrayBuffer(totalSize);
-  const view = new DataView(buf);
-  const u8 = new Uint8Array(buf);
-
-  // Magic + base header
-  view.setUint32(0, 0x55545241, true); // "UTRA"
-  view.setUint8(4, 1);                  // version
-  view.setUint8(5, zoom);               // zoom
-  view.setUint16(6, 0, true);           // padding
-  view.setUint32(8,  xMin, true);
-  view.setUint32(12, xMax, true);
-  view.setUint32(16, yMin, true);
-  view.setUint32(20, yMax, true);
-  view.setUint32(24, tiles.length, true);
-  view.setUint32(28, 0, true);
-
-  // Tile index + data
-  let dataOffset = 0;
-  tileIndex = [];
-  for (let i = 0; i < tiles.length; i++) {
-    const {x, y} = tiles[i];
-    const indexOff = HEADER_BASE + i * INDEX_ENTRY;
-    view.setUint32(indexOff,     x,           true);
-    view.setUint32(indexOff + 4, y,           true);
-    view.setUint32(indexOff + 8, dataOffset,  true);
-    tileIndex.push({x, y, offset: dataOffset});
-
-    const rgb = rgb565Map.get(`${x},${y}`);
-    u8.set(rgb, headerPadded + dataOffset);
-    dataOffset += TILE_BYTES;
-  }
-
-  // Fill header padding with 0xFF
-  for (let i = HEADER_BASE + tiles.length*INDEX_ENTRY; i < headerPadded; i++) {
-    u8[i] = 0xFF;
-  }
-
+  const xs=parts.map(p=>p.x),ys=parts.map(p=>p.y),xMin=Math.min(...xs),xMax=Math.max(...xs),yMin=Math.min(...ys),yMax=Math.max(...ys);
+  const buf=new ArrayBuffer(hP+parts.length*TB),dv=new DataView(buf),u8=new Uint8Array(buf);
+  dv.setUint32(0,0x55545241,true);dv.setUint8(4,1);dv.setUint8(5,zoom);
+  dv.setUint32(8,xMin,true);dv.setUint32(12,xMax,true);dv.setUint32(16,yMin,true);dv.setUint32(20,yMax,true);dv.setUint32(24,parts.length,true);
+  let off=0;binIdx=[];
+  parts.forEach((p,i)=>{dv.setUint32(32+i*12,p.x,true);dv.setUint32(36+i*12,p.y,true);dv.setUint32(40+i*12,off,true);u8.set(p.rgb,hP+off);binIdx.push({x:p.x,y:p.y,offset:off});off+=TB;});
+  for(let i=hB;i<hP;i++)u8[i]=0xFF;
   return buf;
 }
 
-// ─── Save ────────────────────────────────────────────────────────────────────
-function saveImage() {
-  if (!builtImage) return;
-  const blob = new Blob([builtImage], {type: 'application/octet-stream'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'utrack_tiles.bin';
-  a.click();
-  log('💾 Saved: utrack_tiles.bin', 'ok');
+function saveBin(){if(!binData)return;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([binData],{type:'application/octet-stream'}));a.download='tiles.bin';a.click();lg('Saved tiles.bin','ok');}
+function saveH(){
+  if(!binIdx.length)return;const zoom=parseInt(document.getElementById('zoom').value);
+  const xs=binIdx.map(t=>t.x),ys=binIdx.map(t=>t.y),xMin=Math.min(...xs),xMax=Math.max(...xs),yMin=Math.min(...ys),yMax=Math.max(...ys);
+  const nw=t2ll(xMin,yMin,zoom),se=t2ll(xMax+1,yMax+1,zoom);
+  const h=`/* tile_config.h */\n#pragma once\n#define TILE_ZOOM ${zoom}\n#define TILE_COUNT ${binIdx.length}U\n#define TILE_X_MIN ${xMin}U\n#define TILE_X_MAX ${xMax}U\n#define TILE_Y_MIN ${yMin}U\n#define TILE_Y_MAX ${yMax}U\n#define TILE_NW_LAT ${nw.lat.toFixed(6)}\n#define TILE_NW_LON ${nw.lon.toFixed(6)}\n#define TILE_SE_LAT ${se.lat.toFixed(6)}\n#define TILE_SE_LON ${se.lon.toFixed(6)}\n`;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([h],{type:'text/plain'}));a.download='tile_config.h';a.click();lg('Saved tile_config.h','ok');
 }
 
-function saveHeader() {
-  if (!tileIndex.length) return;
-  const zoom = parseInt(document.getElementById('zoomSel').value);
-  const xVals = tileIndex.map(t=>t.x), yVals = tileIndex.map(t=>t.y);
-  const xMin=Math.min(...xVals),xMax=Math.max(...xVals);
-  const yMin=Math.min(...yVals),yMax=Math.max(...yVals);
-
-  function tileToLatLon(x,y,z){
-    const n=Math.pow(2,z);
-    const lon=x/n*360-180;
-    const latR=Math.atan(Math.sinh(Math.PI*(1-2*y/n)));
-    return {lat:latR*180/Math.PI,lon};
-  }
-  const nw=tileToLatLon(xMin,yMin,zoom);
-  const se=tileToLatLon(xMax+1,yMax+1,zoom);
-
-  const h = `/* tile_config.h — Auto-generated by U-Track Map Tool */
-#pragma once
-#define TILE_MAGIC       0x55545241U
-#define TILE_VERSION     1
-#define TILE_ZOOM        ${zoom}
-#define TILE_X_MIN       ${xMin}U
-#define TILE_X_MAX       ${xMax}U
-#define TILE_Y_MIN       ${yMin}U
-#define TILE_Y_MAX       ${yMax}U
-#define TILE_COUNT       ${tileIndex.length}U
-#define TILE_PX          256
-#define TILE_BYTES       131072U
-#define TILE_NW_LAT      ${nw.lat.toFixed(6)}
-#define TILE_NW_LON      ${nw.lon.toFixed(6)}
-#define TILE_SE_LAT      ${se.lat.toFixed(6)}
-#define TILE_SE_LON      ${se.lon.toFixed(6)}
-`;
-  const blob = new Blob([h], {type:'text/plain'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'tile_config.h';
-  a.click();
-  log('📄 Saved: tile_config.h', 'ok');
-}
-
-function clearSelection() {
-  if (selCircle) { map.removeLayer(selCircle); selCircle = null; }
-  if (selRect)   { map.removeLayer(selRect);   selRect = null; }
-  if (gpxLayer)  { map.removeLayer(gpxLayer);  gpxLayer = null; }
-  selectedBounds = null;
-  gpxTiles = null;
-  builtImage = null;
-  tileIndex = [];
-  selMode = 'radius';
-  document.getElementById('modeRadius').className = 'mode-btn active';
-  document.getElementById('modeBox').className = 'mode-btn';
-  document.getElementById('selBadge').style.display = 'none';
-  document.getElementById('saveRow').style.display = 'none';
-  document.getElementById('progressWrap').style.display = 'none';
-  document.getElementById('gpxInfo').style.display = 'none';
-  document.getElementById('gpxDrop').textContent = 'Drop GPX file here\nor click to browse';
-  document.getElementById('gpxDrop').style.borderColor = '#2a2a2a';
-  document.getElementById('gpxDrop').style.color = '#555';
-  document.getElementById('map').style.cursor = '';
-  updateStats(null);
-  log('Selection cleared');
-}
-
-// Init
-updatePreview();
-// Force map to recalculate size after full page load
-window.addEventListener('load', function() {
-  setTimeout(function() { map.invalidateSize(); }, 100);
-});
+updatePrev();
 </script>
 </body>
 </html>
