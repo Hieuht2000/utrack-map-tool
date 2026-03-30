@@ -175,7 +175,7 @@ input[type=text]:focus, input[type=number]:focus { border-color: #00E5CC; }
       <div class="row">
         <label>Buffer (km)</label>
         <input type="number" id="buf" value="1" min="0.5" max="5" step="0.5" style="width:55px"/>
-        <select id="zoom" onchange="updatePrev()" style="width:auto;flex-shrink:0">
+        <select id="zoom" onchange="onZoomChange()" style="width:auto;flex-shrink:0">
           <option value="13">z13</option>
           <option value="14" selected>z14</option>
           <option value="15">z15</option>
@@ -236,7 +236,7 @@ window.addEventListener('load',()=>setTimeout(()=>map.invalidateSize(),300));
 
 let mode='radius',cLat=60.25,cLon=24.60;
 let selC=null,selR=null,selB=null,ds=null,dg=false;
-let gpxT=null,rtT=null,binData=null,binIdx=[];
+let gpxT=null,gpxPts=null,rtT=null,binData=null,binIdx=[];
 let wps=[],wpm=[],wpl=[],wpdist=0,gpxLy=null;
 
 function ll2t(lat,lon,z){const n=1<<z;return{x:Math.floor((lon+180)/360*n),y:Math.floor((1-Math.log(Math.tan(lat*Math.PI/180)+1/Math.cos(lat*Math.PI/180))/Math.PI)/2*n)};}
@@ -263,10 +263,12 @@ map.on('click',async function(e){
   if(mode==='draw'){await addWp(e.latlng.lat,e.latlng.lng);return;}
   if(mode==='radius'){cLat=e.latlng.lat;cLon=e.latlng.lng;document.getElementById('cb').textContent=`${cLat.toFixed(4)}, ${cLon.toFixed(4)}`;updatePrev();}
 });
-map.on('mousedown',function(e){if(mode!=='box')return;dg=true;ds=e.latlng;if(selR){map.removeLayer(selR);selR=null;}map.dragging.disable();});
+map.on('mousedown',function(e){if(mode!=='box')return;if(e.originalEvent.button!==0)return;dg=true;ds=e.latlng;if(selR){map.removeLayer(selR);selR=null;}map.dragging.disable();});
 map.on('mousemove',function(e){if(!dg||!ds)return;if(selR)map.removeLayer(selR);selR=L.rectangle([ds,e.latlng],{color:'#00E5CC',weight:2,fillColor:'#00E5CC',fillOpacity:.1,dashArray:'4 4'}).addTo(map);});
 map.on('mouseup',function(e){
-  if(!dg||!ds)return;dg=false;map.dragging.enable();
+  if(!dg||!ds)return;
+  if(e.originalEvent.button!==0){dg=false;map.dragging.enable();return;}
+  dg=false;map.dragging.enable();
   const end=e.latlng;
   if(Math.abs(ds.lat-end.lat)<0.001&&Math.abs(ds.lng-end.lng)<0.001){if(selR){map.removeLayer(selR);selR=null;}ds=null;return;}
   selB=L.latLngBounds(ds,end);ds=null;
@@ -285,6 +287,8 @@ function setMode(m){
   if(m==='draw'&&document.getElementById('mbD'))document.getElementById('mbD').className='mb on';
   document.getElementById('rc').style.display=m==='radius'?'block':'none';
   document.getElementById('map').style.cursor=(m==='box'||m==='draw')?'crosshair':'';
+  // Remove radius circle when leaving radius mode
+  if(m!=='radius'&&selC){map.removeLayer(selC);selC=null;}
   if(m==='radius'){map.dragging.enable();updatePrev();}
   if(m==='box')map.dragging.enable();
 }
@@ -295,6 +299,24 @@ function updatePrev(){
   if(selC)map.removeLayer(selC);
   selC=L.circle([cLat,cLon],{radius:r*1000,color:'#00E5CC',weight:2,fillColor:'#00E5CC',fillOpacity:.07}).addTo(map);
   upStats(tir(cLat,cLon,r,z));
+}
+
+function onZoomChange(){
+  // Recalculate tiles for whatever is currently selected
+  const z=parseInt(document.getElementById('zoom').value);
+  if(mode==='radius'){updatePrev();}
+  else if(mode==='box'&&selB){
+    const tiles=tib(selB,z);upStats(tiles);
+    document.getElementById('sb2').textContent=`${tiles.length} tiles`;
+  }
+  else if(mode==='gpx'&&gpxPts){
+    const buf=parseFloat(document.getElementById('buf').value)||1;
+    gpxT=tar(gpxPts,buf,z);
+    upStats(gpxT);
+    document.getElementById('sb2').textContent=`GPX: ${gpxT.length} tiles`;
+    lg(`Zoom updated: ${gpxT.length} tiles`,'ok');
+  }
+  else if(mode==='route'&&wpl.length){upRouteTiles();}
 }
 
 async function dosearch(){
@@ -315,6 +337,7 @@ function parseGpx(text,name){
   gpxLy=L.layerGroup([L.polyline(pts,{color:'#00E5CC',weight:3}),L.circleMarker(pts[0],{radius:5,color:'#00E5CC',fillColor:'#fff',fillOpacity:1,weight:2}),L.circleMarker(pts[pts.length-1],{radius:5,color:'#f44',fillColor:'#fff',fillOpacity:1,weight:2})]).addTo(map);
   map.fitBounds(L.latLngBounds(pts),{padding:[30,30]});
   const z=parseInt(document.getElementById('zoom').value),buf=parseFloat(document.getElementById('buf').value)||1;
+  gpxPts=pts;
   gpxT=tar(pts,buf,z);mode='gpx';
   document.getElementById('drop').textContent='✓ '+name;
   document.getElementById('gpxi').style.display='block';document.getElementById('gpxi').textContent=`${pts.length} pts · ${d.toFixed(1)} km · ${gpxT.length} tiles`;
@@ -340,7 +363,7 @@ function exportGpx(){if(!wpl.length){lg('Draw a route first','wn');return;}const
 
 function clearSel(){
   if(selC){map.removeLayer(selC);selC=null;}if(selR){map.removeLayer(selR);selR=null;}if(gpxLy){map.removeLayer(gpxLy);gpxLy=null;}
-  selB=null;gpxT=null;rtT=null;binData=null;binIdx=[];mode='radius';setMode('radius');
+  selB=null;gpxT=null;gpxPts=null;rtT=null;binData=null;binIdx=[];mode='radius';setMode('radius');
   document.getElementById('sb2').style.display='none';document.getElementById('sr').style.display='none';
   document.getElementById('prog').style.display='none';document.getElementById('gpxi').style.display='none';
   document.getElementById('drop').textContent='Drop GPX file or click to browse';upStats(null);lg('Cleared');
